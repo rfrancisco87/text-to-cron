@@ -6,9 +6,25 @@ import type { CronFormat } from "@/lib/nlp/types";
 interface FormatToggleProps {
   format: CronFormat;
   onChange: (format: CronFormat) => void;
+  disabled?: boolean;
+  detectedFormat?: CronFormat | null;
 }
 
-export function FormatToggle({ format, onChange }: FormatToggleProps) {
+export function FormatToggle({ format, onChange, disabled, detectedFormat }: FormatToggleProps) {
+  // If disabled (cron-to-text mode), show auto-detected info
+  if (disabled) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-zinc-500">Format:</span>
+        <div className="flex bg-zinc-900 rounded-lg px-3 py-1.5 border border-zinc-800">
+          <span className="text-xs text-zinc-400">
+            {detectedFormat ? `${detectedFormat} (auto)` : "auto-detect"}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-zinc-500">Format:</span>

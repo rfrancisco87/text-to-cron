@@ -12,7 +12,7 @@ import { NextExecutions } from "@/components/NextExecutions";
 import { Card } from "@/components/ui/Card";
 import { useDebounce } from "@/hooks/useDebounce";
 import { parseNaturalLanguage } from "@/lib/nlp/parser";
-import { validateCron, getNextExecutions } from "@/lib/cron/validator";
+import { validateCron, getNextExecutions, detectCronFormat } from "@/lib/cron/validator";
 import { cronToHumanReadable } from "@/lib/cron/explainer";
 import type { CronFormat } from "@/lib/nlp/types";
 
@@ -35,6 +35,9 @@ export default function Home() {
 
   const debouncedTextInput = useDebounce(textInput, 300);
   const debouncedCronInput = useDebounce(cronInput, 300);
+
+  // Auto-detect format for cron-to-text mode
+  const detectedFormat = mode === "cron-to-text" ? detectCronFormat(cronInput) : null;
 
   // Text to Cron processing
   useEffect(() => {
@@ -69,7 +72,7 @@ export default function Home() {
     }
   }, [debouncedTextInput, mode, format]);
 
-  // Cron to Text processing
+  // Cron to Text processing (auto-detect format)
   useEffect(() => {
     if (mode !== "cron-to-text") return;
 
@@ -79,12 +82,14 @@ export default function Home() {
       return;
     }
 
-    const validation = validateCron(debouncedCronInput, format);
+    // Auto-detect format from input
+    const detectedFormat = detectCronFormat(debouncedCronInput);
+    const validation = validateCron(debouncedCronInput);
 
-    if (validation.isValid) {
-      const nextDates = getNextExecutions(debouncedCronInput, 5, format);
+    if (validation.isValid && detectedFormat) {
+      const nextDates = getNextExecutions(debouncedCronInput, 5, detectedFormat);
       // For human readable, use 5-field version
-      const cronFor5Field = format === "6-field"
+      const cronFor5Field = detectedFormat === "6-field"
         ? debouncedCronInput.split(" ").slice(1).join(" ")
         : debouncedCronInput;
       setResult({
@@ -97,7 +102,7 @@ export default function Home() {
       setResult(null);
       setError(validation.error || "Invalid cron expression");
     }
-  }, [debouncedCronInput, mode, format]);
+  }, [debouncedCronInput, mode]);
 
   const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
@@ -116,7 +121,12 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <ModeToggle mode={mode} onChange={handleModeChange} />
-          <FormatToggle format={format} onChange={setFormat} />
+          <FormatToggle
+            format={format}
+            onChange={setFormat}
+            disabled={mode === "cron-to-text"}
+            detectedFormat={detectedFormat}
+          />
         </div>
 
         <Card className="mb-6">

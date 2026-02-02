@@ -26,9 +26,14 @@ const CRON_EXAMPLES_6 = [
 ];
 
 export function CronInput({ value, onChange, isValid, error, format = "5-field" }: CronInputProps) {
-  const examples = format === "6-field" ? CRON_EXAMPLES_6 : CRON_EXAMPLES_5;
-  const placeholder = format === "6-field" ? "0 * * * * *" : "* * * * *";
-  const formatHint = format === "6-field"
+  // Auto-detect format from current value for display
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  const detectedFormat: CronFormat = parts.length === 6 ? "6-field" : "5-field";
+  const displayFormat = value.trim() ? detectedFormat : format;
+
+  const examples = [...CRON_EXAMPLES_5, ...CRON_EXAMPLES_6];
+  const placeholder = "* * * * * or 0 * * * * *";
+  const formatHint = displayFormat === "6-field"
     ? "second minute hour day month weekday"
     : "minute hour day month weekday";
   return (

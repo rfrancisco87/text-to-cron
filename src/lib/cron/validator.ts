@@ -4,46 +4,68 @@ import type { CronFormat } from "@/lib/nlp/types";
 export interface ValidationResult {
   isValid: boolean;
   error?: string;
+  detectedFormat?: CronFormat | null;
+}
+
+export function detectCronFormat(expression: string): CronFormat | null {
+  if (!expression || !expression.trim()) return null;
+  const parts = expression.trim().split(/\s+/);
+  if (parts.length === 5) return "5-field";
+  if (parts.length === 6) return "6-field";
+  return null;
 }
 
 export function validateCron(
   expression: string,
-  format: CronFormat = "5-field"
+  format?: CronFormat
 ): ValidationResult {
   if (!expression || !expression.trim()) {
     return { isValid: false, error: "Cron expression is empty" };
   }
 
   const parts = expression.trim().split(/\s+/);
-  const expectedFields = format === "6-field" ? 6 : 5;
+
+  // Auto-detect format if not provided
+  const detectedFormat = detectCronFormat(expression);
+  const effectiveFormat = format || detectedFormat;
+
+  if (!effectiveFormat) {
+    return {
+      isValid: false,
+      error: `Expected 5 or 6 fields, got ${parts.length}`,
+    };
+  }
+
+  const expectedFields = effectiveFormat === "6-field" ? 6 : 5;
 
   if (parts.length !== expectedFields) {
-    const fieldNames = format === "6-field"
+    const fieldNames = effectiveFormat === "6-field"
       ? "second minute hour day month weekday"
       : "minute hour day month weekday";
     return {
       isValid: false,
       error: `Expected ${expectedFields} fields (${fieldNames}), got ${parts.length}`,
+      detectedFormat,
     };
   }
 
   try {
     // For 6-field, strip the seconds for cron-parser (it only supports 5-field)
-    const cronFor5Field = format === "6-field" ? parts.slice(1).join(" ") : expression;
+    const cronFor5Field = effectiveFormat === "6-field" ? parts.slice(1).join(" ") : expression;
     parseExpression(cronFor5Field);
 
     // Validate seconds field separately for 6-field
-    if (format === "6-field") {
+    if (effectiveFormat === "6-field") {
       const seconds = parts[0];
       if (!isValidCronField(seconds, 0, 59)) {
-        return { isValid: false, error: "Invalid seconds field (0-59)" };
+        return { isValid: false, error: "Invalid seconds field (0-59)", detectedFormat };
       }
     }
 
-    return { isValid: true };
+    return { isValid: true, detectedFormat };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid cron expression";
-    return { isValid: false, error: message };
+    return { isValid: false, error: message, detectedFormat };
   }
 }
 
