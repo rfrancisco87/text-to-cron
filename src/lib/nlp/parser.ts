@@ -13,15 +13,7 @@ function normalizeInput(input: string): string {
     .replace(/each and every/gi, "every");
 }
 
-function parseHour(hourStr: string, ampm?: string): number {
-  let hour = parseInt(hourStr, 10);
-  if (ampm) {
-    const isPM = ampm.toLowerCase() === "pm";
-    if (isPM && hour !== 12) hour += 12;
-    if (!isPM && hour === 12) hour = 0;
-  }
-  return hour;
-}
+
 
 function extractTimeFromChrono(input: string): { hour: number; minute: number } | null {
   const parsed = chrono.parse(input, new Date(), { forwardDate: true });

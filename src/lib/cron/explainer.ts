@@ -24,19 +24,17 @@ export function getCronFieldExplanation(expression: string): {
   const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
 
   return {
-    minute: explainField(minute, "minute", 0, 59),
-    hour: explainField(hour, "hour", 0, 23),
-    dayOfMonth: explainField(dayOfMonth, "day of month", 1, 31),
-    month: explainField(month, "month", 1, 12),
-    dayOfWeek: explainField(dayOfWeek, "day of week", 0, 6),
+    minute: explainField(minute, "minute"),
+    hour: explainField(hour, "hour"),
+    dayOfMonth: explainField(dayOfMonth, "day of month"),
+    month: explainField(month, "month"),
+    dayOfWeek: explainField(dayOfWeek, "day of week"),
   };
 }
 
 function explainField(
   value: string,
-  fieldName: string,
-  min: number,
-  max: number
+  fieldName: string
 ): string {
   if (value === "*") {
     return `every ${fieldName}`;
